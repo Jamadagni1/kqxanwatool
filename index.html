@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sanskrit Magic Builder | Ashtadhyayi Engine</title>
+    <title>संस्कृत मैजिक बिल्डर | WebApp</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Tiro+Devanagari+Sanskrit&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <link rel="stylesheet" href="style.css">
+    
     <style>
-        /* टाइपिंग बॉक्स और UI सुधार */
+        /* टाइपिंग बॉक्स की अतिरिक्त डिज़ाइन */
         input[type="text"] { 
             width: 100%; padding: 15px; border-radius: 12px; 
             border: 2px solid var(--border-light); 
@@ -16,18 +19,32 @@
             outline: none; transition: 0.3s; 
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); 
         }
-        input[type="text"]:focus { border-color: #ec4899; box-shadow: 0 0 8px rgba(236, 72, 153, 0.2); }
-        .sutra-desc p { margin-bottom: 8px; line-height: 1.6; }
-        .example-text { color: #4b5563; font-style: italic; border-top: 1px dashed #ddd; pt: 5px; }
+        input[type="text"]:focus { border-color: #ec4899; }
+
+        /* डेटा लोडिंग के समय का संदेश */
+        #loadingStatus {
+            position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+            background: #eab308; color: white; padding: 5px 20px;
+            border-radius: 20px; font-size: 14px; z-index: 2000;
+            display: none;
+        }
     </style>
+
+    <script src="panini_engine.js" defer></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
 
+<div id="loadingStatus">डेटा लोड हो रहा है... कृपया प्रतीक्षा करें</div>
+
 <header>
-    <div class="logo" onclick="location.reload()" style="cursor:pointer;">
-        <i class="fa-solid fa-wand-magic-sparkles" style="color:#ec4899;"></i> संस्कृत मैजिक
+    <div class="logo">
+        <i class="fa-solid fa-wand-magic-sparkles" style="color:#ec4899;"></i> 
+        संस्कृत मैजिक
     </div>
-    <button class="hamburger" onclick="toggleMobileMenu()"><i class="fa-solid fa-bars" id="menu-icon"></i></button>
+    <button class="hamburger" onclick="toggleMobileMenu()">
+        <i class="fa-solid fa-bars" id="menu-icon"></i>
+    </button>
 
     <nav id="nav-menu">
         <a href="#" onclick="closeMobileMenu()"><i class="fa-solid fa-house"></i> होम</a>
@@ -37,8 +54,7 @@
             <button onclick="toggleSutraDropdown(event)">
                 <i class="fa-solid fa-book-open"></i> व्याकरण सूत्र <i class="fa-solid fa-caret-down"></i>
             </button>
-            <div class="dropdown-content" id="sutraDropdown">
-                </div>
+            <div class="dropdown-content" id="sutraDropdown"></div>
         </div>
         <button onclick="toggleDark()"><i class="fa-solid fa-moon" id="theme-icon"></i> डार्क मोड</button>
     </nav>
@@ -46,7 +62,7 @@
 
 <section class="hero">
     <h1>शब्द निर्माण का जादू! ✨</h1>
-    <p>अष्टाध्यायी के नियमों (१.१.१ - १.१.७५) के साथ शुद्ध रूप सिद्धि!</p>
+    <p>पाणिनीय व्याकरण के अनुसार कृदन्त रूप सिद्ध करें।</p>
 </section>
 
 <div class="main-container" id="tool">
@@ -54,19 +70,19 @@
         <div class="input-grid">
             <div class="input-group">
                 <label class="label-upa"><i class="fa-solid fa-puzzle-piece"></i> उपसर्ग</label>
-                <input type="text" id="upasarga" class="sanskrit-text" list="upaList" placeholder="चुनें या टाइप करें..." autocomplete="off">
+                <input type="text" id="upasarga" class="sanskrit-text select-upa" list="upaList" placeholder="उपसर्ग चुनें..." autocomplete="off">
                 <datalist id="upaList"></datalist>
             </div>
             
             <div class="input-group">
                 <label class="label-dhatu"><i class="fa-solid fa-seedling"></i> धातु (मूल)</label>
-                <input type="text" id="dhatu" class="sanskrit-text" list="dhatuList" placeholder="उदा. कृ, पठ्, लिख्..." autocomplete="off">
+                <input type="text" id="dhatu" class="sanskrit-text select-dhatu" list="dhatuList" placeholder="धातु चुनें..." autocomplete="off">
                 <datalist id="dhatuList"></datalist>
             </div>
             
             <div class="input-group">
                 <label class="label-prat"><i class="fa-solid fa-link"></i> प्रत्यय</label>
-                <input type="text" id="pratyaya" class="sanskrit-text" list="pratList" placeholder="उदा. तव्यत्, क्त्वा..." autocomplete="off">
+                <input type="text" id="pratyaya" class="sanskrit-text select-prat" list="pratList" placeholder="प्रत्यय चुनें..." autocomplete="off">
                 <datalist id="pratList"></datalist>
             </div>
         </div>
@@ -78,13 +94,12 @@
         <div class="result-section" id="resultSection">
             <div class="result-box" onclick="togglePrakriya()">
                 <div class="result-text sanskrit-text" id="finalOutput"></div>
-                <div class="hint"><i class="fa-solid fa-hand-pointer"></i> यह कैसे बना? (प्रक्रिया देखने के लिए टैप करें)</div>
+                <div class="hint"><i class="fa-solid fa-hand-pointer"></i> यह कैसे बना? (यहाँ टैप करें)</div>
             </div>
 
             <div class="prakriya-box" id="prakriyaBox">
-                <div class="prakriya-title"><i class="fa-solid fa-list-check"></i> पाणिनीय सिद्धि प्रक्रिया:</div>
-                <ul class="step-list sanskrit-text" id="prakriyaSteps">
-                    </ul>
+                <div class="prakriya-title"><i class="fa-solid fa-list-check"></i> बनने की कहानी:</div>
+                <ul class="step-list sanskrit-text" id="prakriyaSteps"></ul>
             </div>
         </div>
     </div>
@@ -93,32 +108,23 @@
 <div id="searchModal" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="closeSearchModal()">&times;</span>
-        <h2 style="color: var(--text-dark); margin-bottom: 5px;">
-            <i class="fa-solid fa-magnifying-glass" style="color:#ec4899;"></i> उदाहरण खोजें
-        </h2>
-        <p style="margin-bottom: 20px; font-size: 0.9em; color: var(--text-light);">
-            धातु, प्रत्यय या सूत्र संख्या से खोजें (उदा: 1.1.1)
-        </p>
+        <h2 style="color: var(--text-dark); margin-bottom: 5px;"><i class="fa-solid fa-magnifying-glass" style="color:#ec4899;"></i> उदाहरण खोजें</h2>
+        <p style="margin-bottom: 20px; font-size: 0.9em; color: var(--text-light);">कोई भी शब्द या सूत्र संख्या टाइप करें...</p>
         
-        <input type="text" id="searchInput" class="sanskrit-text" placeholder="खोजें..." onkeyup="performSearch()" autocomplete="off">
+        <input type="text" id="searchInput" class="sanskrit-text" placeholder="यहाँ टाइप करें..." onkeyup="performSearch()" autocomplete="off">
         
-        <div id="searchResults" class="search-results">
-            </div>
+        <div id="searchResults" class="search-results"></div>
     </div>
 </div>
 
 <footer>
     <div class="footer-grid">
         <div class="footer-col">
-            <h3>पाणिनीय व्याकरण इंजन v2.0</h3>
-            <p>यह टूल अष्टाध्यायी के सूत्रों के आधार पर कृदन्त शब्दों की रचना करता है।</p>
-            <p style="margin-top:10px; font-size: 0.8em; opacity: 0.7;">© 2026 नामिन् - संतोष के. द्वारा निर्मित</p>
+            <h3>संस्कृत मैजिक</h3>
+            <p>हजारों धातुओं और पाणिनीय सूत्रों पर आधारित आधुनिक कृदन्त शब्द निर्माता।</p>
         </div>
     </div>
 </footer>
-
-<script src="ashtadhyayi_engine.js"></script>
-<script src="script.js"></script>
 
 </body>
 </html>
