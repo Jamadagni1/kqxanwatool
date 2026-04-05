@@ -45,7 +45,6 @@ function initializeUI() {
     
     if (sutraDrop) {
         sutraDrop.innerHTML = "";
-        // अष्टाध्यायी की सभी कीज़ (pada_1_1, samjnaSutras आदि) को खोजना
         Object.keys(sanskritDatabase).forEach(key => {
             if (Array.isArray(sanskritDatabase[key]) && (key.startsWith('pada') || key.includes('Sutras'))) {
                 sanskritDatabase[key].forEach(s => {
@@ -62,7 +61,7 @@ function initializeUI() {
     }
 }
 
-// ३. मुख्य शब्द निर्माण
+// ३. मुख्य शब्द निर्माण (Generate)
 function generateKridanta() {
     const upa = document.getElementById("upasarga").value.trim();
     const dhatuStr = document.getElementById("dhatu").value.trim();
@@ -71,7 +70,7 @@ function generateKridanta() {
     if(!dhatuStr || !rawPrat) return alert("धातु और प्रत्यय भरें!");
 
     let steps = [];
-    let dData = sanskritDatabase.dhatus[dhatuStr] || { clean: dhatuStr, guna: dhatuStr };
+    let dData = sanskritDatabase.dhatus[dhatuStr] || { clean: dhatuStr };
     let pData = pratyayaDB[rawPrat] || { real: rawPrat, type: "akit", lopa: "कोई नहीं" };
     let activeD = dData.clean || dhatuStr;
 
@@ -79,46 +78,50 @@ function generateKridanta() {
 
     // आदेश कार्य (ल्यप्)
     if (rawPrat === "क्त्वा" && upa !== "") {
-        steps.push(`<b>आदेश:</b> उपसर्ग होने से 'क्त्वा' को '<b>ल्यप्</b>' (७.१.३७) हुआ।`);
-        pData = pratyayaDB["ल्यप्"] || { real: "य", type: "kit", lopa: "ल्, प् इत्" };
+        steps.push(`<b>आदेश:</b> उपसर्ग होने से 'समासेऽनञ्पूर्वे क्त्वो ल्यप्' (7.1.37) से '<b>ल्यप्</b>' हुआ।`);
+        pData = pratyayaDB["ल्यप्"] || { real: "य", type: "kit" };
     }
 
-    steps.push(`<b>इत्-लोप:</b> ${pData.lopa || 'पूर्ण'}। शेष प्रत्यय: <b>${pData.real}</b>`);
+    steps.push(`<b>इत्-लोप:</b> ${pData.lopa || 'प्रक्रिया पूर्ण'}। शेष प्रत्यय: <b>${pData.real}</b>`);
 
-    // गुण/वृद्धि कार्य
+    // गुण/वृद्धि
     if (pData.type === "kit" || pData.type === "ngit") {
-        steps.push(`<b>निषेध:</b> 'क्ङिति च' (१.१.५) से गुण/वृद्धि का निषेध हुआ।`);
+        steps.push(`<b>निषेध:</b> 'क्ङिति च' (1.1.5) से गुण/वृद्धि निषेध।`);
     } else {
         let before = activeD;
-        activeD = window.PaniniEngine.autoGuna(activeD);
-        if(before !== activeD) steps.push(`<b>गुण:</b> 'सार्वधातुकार्धधातुकयोः' (७.३.८४) से गुण होकर '<b>${activeD}</b>' बना।`);
+        activeD = PaniniEngine.autoGuna(activeD);
+        if(before !== activeD) steps.push(`<b>गुण:</b> 'सार्वधातुकार्धधातुकयोः' (7.3.84) से गुण होकर '<b>${activeD}</b>' बना।`);
     }
 
-    // सन्धि कार्य
-    let res = window.PaniniEngine.applySandhi(activeD, pData.real);
+    // सन्धि
+    let res = PaniniEngine.applySandhi(activeD, pData.real);
     
     // उपसर्ग योग
     if (upa) {
         let uBase = upa === "आङ्" ? "आ" : upa;
-        res = window.PaniniEngine.applySandhi(uBase, res);
-        steps.push(`<b>उपसर्ग योग:</b> 'उपसर्गाः क्रियायोगे' (१.४.५९) के अनुसार सन्धि हुई।`);
+        res = PaniniEngine.applySandhi(uBase, res);
+        steps.push(`<b>उपसर्ग योग:</b> 'उपसर्गाः क्रियायोगे' (1.4.59) के अनुसार सन्धि होकर '<b>${PaniniEngine.joinSanskrit(res)}</b>' बना।`);
     }
 
-    let final = window.PaniniEngine.joinSanskrit(res);
+    let final = PaniniEngine.joinSanskrit(res);
     if (pData.gender === "m") final += "ः";
     if (pData.gender === "n") final += "म्";
 
     document.getElementById("finalOutput").innerText = final;
-    document.getElementById("prakriyaSteps").innerHTML = steps.map((s, i) => `
-        <li class="step-item">
-            <div style="background:#3b82f6; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:bold; font-size:14px;">${i+1}</div>
-            <div>${s}</div>
-        </li>`).join("");
+    document.getElementById("prakriyaSteps").innerHTML = steps.map((s, i) => `<li><span class="step-num">${i+1}</span> ${s}</li>`).join("");
     document.getElementById("resultSection").classList.add("active");
-    document.getElementById("prakriyaBox").classList.remove("show");
 }
 
-// ४. सर्च फंक्शन
+// UI Helpers
+function togglePrakriya() { document.getElementById("prakriyaBox").classList.toggle("show"); }
+function toggleAccordion(e, el) { e.stopPropagation(); el.parentElement.classList.toggle("active"); }
+function toggleSutraDropdown(e) { e.stopPropagation(); document.getElementById("sutraDropdown").classList.toggle("show"); }
+function toggleDark() { document.body.classList.toggle("dark"); }
+function openSearchModal() { document.getElementById("searchModal").style.display = "block"; document.getElementById("searchInput").focus(); }
+function closeSearchModal() { document.getElementById("searchModal").style.display = "none"; }
+function toggleMobileMenu() { document.getElementById("nav-menu").classList.toggle("active"); }
+function closeMobileMenu() { document.getElementById("nav-menu").classList.remove("active"); }
+
 function performSearch() {
     let q = document.getElementById("searchInput").value.trim();
     let resDiv = document.getElementById("searchResults");
@@ -130,20 +133,5 @@ function performSearch() {
             <div class="su-text"><b>सूत्र:</b> ${m.sutra}</div>
         </div>`).join("");
 }
-
-// ५. UI Helpers
-function togglePrakriya() { document.getElementById("prakriyaBox").classList.toggle("show"); }
-function toggleAccordion(e, el) { e.stopPropagation(); el.parentElement.classList.toggle("active"); }
-function toggleSutraDropdown(e) { e.stopPropagation(); document.getElementById("sutraDropdown").classList.toggle("show"); }
-function toggleDark() { 
-    document.body.classList.toggle("dark"); 
-    const icon = document.getElementById("theme-icon");
-    if(document.body.classList.contains("dark")) icon.classList.replace("fa-moon", "fa-sun");
-    else icon.classList.replace("fa-sun", "fa-moon");
-}
-function openSearchModal() { document.getElementById("searchModal").style.display = "block"; document.getElementById("searchInput").focus(); }
-function closeSearchModal() { document.getElementById("searchModal").style.display = "none"; }
-function toggleMobileMenu() { document.getElementById("nav-menu").classList.toggle("active"); }
-function closeMobileMenu() { document.getElementById("nav-menu").classList.remove("active"); }
 
 window.onload = loadDatabase;
