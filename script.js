@@ -1,13 +1,4 @@
-// --- EMERGENCY ENGINE BACKUP ---
-if (typeof window.PaniniEngine === 'undefined') {
-    window.PaniniEngine = {
-        joinSanskrit: function(t){ return t.replace(/्अ/g,'').replace(/्आ/g,'ा').replace(/्इ/g,'ि').replace(/्ई/g,'ी').replace(/्उ/g,'ु').replace(/्ऊ/g,'ू').replace(/्ऋ/g,'ृ').replace(/्ए/g,'े').replace(/्ऐ/g,'ै').replace(/्ओ/g,'ो').replace(/्औ/g,'ौ'); },
-        autoGuna: function(d){ if(!d)return ""; if(d.endsWith('ि')||d.endsWith('ी'))return d.slice(0,-1)+'े'; if(d.endsWith('ु')||d.endsWith('ू'))return d.slice(0,-1)+'ो'; if(d.endsWith('ृ'))return d.slice(0,-1)+'र्'; return d.replace(/ि([क-ह]्)$/,'े$1').replace(/ु([क-ह]्)$/,'ो$1').replace(/ृ([क-ह]्)$/,'र्$1'); },
-        autoVriddhi: function(d){ if(!d)return ""; if(d.endsWith('ि')||d.endsWith('ी'))return d.slice(0,-1)+'ै'; if(d.endsWith('ु')||d.endsWith('ू'))return d.slice(0,-1)+'ौ'; if(d.endsWith('ृ'))return d.slice(0,-1)+'ार्'; if(d.endsWith('्')) return d.replace(/([क-ह])([क-ह]्)$/, '$1ा$2').replace(/ि([क-ह]्)$/, 'ै$1').replace(/ु([क-ह]्)$/, 'ौ$1').replace(/ृ([क-ह]्)$/, 'ार्$1'); return d; },
-        applySandhi: function(w1,w2){ if(!w1||!w2)return w1+w2; let s1=w1.slice(0,-1),l=w1.slice(-1),f=w2[0],s2=w2.slice(1); if("अआइईउऊऋएऐओऔ".includes(f)){ if(l==='ु'||l==='ू')return s1+'्'+this.joinSanskrit('व्'+f)+s2; if(l==='ि'||l==='ी')return s1+'्'+this.joinSanskrit('य्'+f)+s2; if(l==='्')return w1+f+s2; } return w1+w2; }
-    };
-}
-
+// १. डेटा और डेटाबेस प्रारुप
 let sanskritDatabase = { upasargas: [], dhatus: {}, examples: [] };
 let pratyayaDB = {}; 
 
@@ -19,7 +10,6 @@ async function loadDatabase() {
         { key: 'examples', url: `examples.json?v=${timestamp}` },
         { key: 'pratyayas', url: `pratyayas.json?v=${timestamp}` }
     ];
-
     for (const file of files) {
         try {
             const response = await fetch(file.url);
@@ -28,33 +18,12 @@ async function loadDatabase() {
             else if (file.key === 'pratyayas') { pratyayaDB = data.pratyayaDB; }
             else if (file.key === 'examples') { sanskritDatabase.examples = data.examples; }
             else { Object.assign(sanskritDatabase, data); }
-        } catch (e) { console.warn(file.key + " not loaded"); }
+        } catch (e) { console.warn(file.key + " लोड नहीं हो सकी"); }
     }
     initializeUI();
 }
 
-function initializeUI() {
-    const upaList = document.getElementById("upaList");
-    const dList = document.getElementById("dhatuList");
-    const pList = document.getElementById("pratList");
-    const sutraDrop = document.getElementById("sutraDropdown");
-
-    if (upaList) upaList.innerHTML = sanskritDatabase.upasargas.map(u => `<option value="${u.id}">${u.label}</option>`).join("");
-    if (dList) dList.innerHTML = Object.keys(sanskritDatabase.dhatus).map(k => `<option value="${k}">${sanskritDatabase.dhatus[k].label}</option>`).join("");
-    if (pList) pList.innerHTML = Object.keys(pratyayaDB).map(k => `<option value="${k}">${k}</option>`).join("");
-    
-    if (sutraDrop) {
-        sutraDrop.innerHTML = "";
-        Object.keys(sanskritDatabase).forEach(key => {
-            if (Array.isArray(sanskritDatabase[key]) && (key.startsWith('pada') || key.includes('Sutras'))) {
-                sanskritDatabase[key].forEach(s => {
-                    sutraDrop.insertAdjacentHTML('beforeend', `<div class="sutra-item"><div class="sutra-header sanskrit-text" onclick="toggleAccordion(event, this)">[${s.id || 'सूत्र'}] ${s.name} <i class="fa-solid fa-chevron-down"></i></div><div class="sutra-desc sanskrit-text">${s.desc}</div></div>`);
-                });
-            }
-        });
-    }
-}
-
+// २. मुख्य निर्माण प्रक्रिया (१० विस्तृत चरण)
 function generateKridanta() {
     const upa = document.getElementById("upasarga").value.trim();
     const dhatuStr = document.getElementById("dhatu").value.trim();
@@ -69,83 +38,100 @@ function generateKridanta() {
     let activeD = dData.clean || dhatuStr;
     let activeP = pData.real;
 
-    steps.push(`<b>आरम्भ:</b> ${upa ? upa + ' + ' : ''}${dhatuStr} + ${rawPrat}`);
+    // --- १० चरणों की विस्तृत प्रक्रिया ---
 
-    // १. धातु इत्-लोप
+    // १. उद्देश्य (Aim)
+    steps.push(`<b>१. आरम्भ:</b> '${upa ? upa + ' + ' : ''}${dhatuStr}' धातु से '${rawPrat}' प्रत्यय करने का लक्ष्य निर्धारित हुआ।`);
+
+    // २. धातु इत्-लोप (Dhatu Anubandha)
     if(dData.anubandha && dData.anubandha !== "none") {
-        steps.push(`<b>इत्-संज्ञा:</b> धातु में से '<b>${dData.anubandha}</b>' का लोप हुआ। शेष धातु: <b>${activeD}</b>`);
+        steps.push(`<b>२. धातु इत्-संज्ञा:</b> 'आदिर्ञिटुडवः' या 'हलन्त्यम्' से <b>${dData.anubandha}</b> की इत्-संज्ञा और लोप हुआ। शेष धातु: <b>${activeD}</b>`);
+    } else {
+        steps.push(`<b>२. धातु शुद्धि:</b> धातु में कोई अनुबंध शेष नहीं है, शुद्ध रूप: <b>${activeD}</b>`);
     }
 
-    // २. प्रत्यय आदेश (ल्यप्)
+    // ३. प्रत्यय आदेश (Pratyaya Adesha)
     if (rawPrat === "क्त्वा" && upa !== "") {
-        steps.push(`<b>आदेश:</b> उपसर्ग होने से 'समासेऽनञ्पूर्वे क्त्वो ल्यप्' (7.1.37) से 'क्त्वा' को '<b>ल्यप्</b>' हुआ।`);
-        pData = pratyayaDB["ल्यप्"];
+        steps.push(`<b>३. प्रत्यय आदेश:</b> उपसर्ग होने के कारण 'समासेऽनञ्पूर्वे क्त्वो ल्यप्' (७.१.३७) से क्त्वा को <b>ल्यप्</b> आदेश हुआ।`);
+        pData = pratyayaDB["ल्यप्"] || { real: "य", type: "kit", lopa: "ल्, प् इत्" };
         activeP = pData.real;
+    } else {
+        steps.push(`<b>३. प्रत्यय स्थिति:</b> विवक्षित प्रत्यय <b>'${rawPrat}'</b> अपनी मूल स्थिति में विद्यमान है।`);
     }
 
-    // ३. प्रत्यय इत्-लोप
-    steps.push(`<b>प्रत्यय इत्-लोप:</b> ${pData.lopa}। शेष प्रत्यय: <b>${activeP}</b>`);
+    // ४. प्रत्यय इत्-लोप (Pratyaya Anubandha)
+    steps.push(`<b>४. प्रत्यय इत्-लोप:</b> ${pData.lopa || 'अनुबंधों'} का लोप हुआ। प्रक्रिया हेतु केवल <b>'${activeP}'</b> शेष बचा।`);
 
-    // ४. अङ्ग कार्य (गुण/वृद्धि/निषेध)
+    // ५. अङ्ग कार्य - गुण (Guna)
+    let gunaOccured = false;
     if (pData.type === "kit" || pData.type === "ngit" || pData.type === "git") {
-        steps.push(`<b>निषेध:</b> प्रत्यय कित्/ङित् होने से '<b>क्ङिति च</b>' (1.1.5) द्वारा गुण/वृद्धि का निषेध।`);
-    } else if (pData.type === "nnit" || pData.type === "nit") {
-        let before = activeD;
-        activeD = window.PaniniEngine.autoVriddhi(activeD);
-        steps.push(`<b>वृद्धि:</b> प्रत्यय ञित्/णित् होने से 'अचो ञ्णिति/अत उपधायाः' द्वारा वृद्धि -> <b>${activeD}</b>`);
+        steps.push(`<b>५. गुण निषेध:</b> प्रत्यय कित्/ङित् होने से '<b>क्ङिति च</b>' (१.१.५) द्वारा गुण कार्य का निषेध हुआ।`);
     } else {
         let before = activeD;
         activeD = window.PaniniEngine.autoGuna(activeD);
-        if(before !== activeD) steps.push(`<b>गुण:</b> 'सार्वधातुकार्धधातुकयोः' (7.3.84) द्वारा गुण -> <b>${activeD}</b>`);
+        if(before !== activeD) {
+            steps.push(`<b>५. गुण कार्य:</b> 'सार्वधातुकार्धधातुकयोः' (७.३.८४) से इगन्त अङ्ग को गुण होकर '<b>${activeD}</b>' बना।`);
+            gunaOccured = true;
+        } else {
+            steps.push(`<b>५. गुण विचार:</b> अङ्ग में गुण की प्राप्ति नहीं है।`);
+        }
     }
 
-    // ५. कुत्व कार्य (यदि प्रत्यय में नियम हो)
+    // ६. अङ्ग कार्य - वृद्धि (Vriddhi)
+    if (!gunaOccured && (pData.type === "nnit" || pData.type === "nit")) {
+        let beforeV = activeD;
+        activeD = window.PaniniEngine.autoVriddhi(activeD);
+        steps.push(`<b>६. वृद्धि कार्य:</b> प्रत्यय ञित्/णित् होने से 'अचो ञ्णिति' (७.२.११५) या 'अत उपधायाः' (७.२.११६) से वृद्धि होकर '<b>${activeD}</b>' बना।`);
+    } else {
+        steps.push(`<b>६. वृद्धि विचार:</b> वृद्धि का निमित्त न होने से रूप यथावत् रहा।`);
+    }
+
+    // ७. कुत्व/विशेष कार्य (Special Rules)
     if (pData.kutva && (activeD.endsWith('च्') || activeD.endsWith('ज्'))) {
-        let old = activeD;
         activeD = activeD.replace(/च्$/, 'क्').replace(/ज्$/, 'ग्');
-        steps.push(`<b>कुत्व:</b> 'चजोः कु घिण्ण्यतोः' (7.3.52) से च्/ज् को क्/ग् हुआ -> <b>${activeD}</b>`);
-    }
-
-    // ६. टि-लोप (डित् प्रत्यय हेतु)
-    if (pData.type === "dit") {
+        steps.push(`<b>७. कुत्व विधि:</b> 'चजोः कु घिण्ण्यतोः' (७.३.५२) से चवर्ग को कवर्ग आदेश हुआ -> <b>${activeD}</b>`);
+    } else if (pData.type === "dit") {
         activeD = activeD.replace(/[अआइईउऊऋएऐओऔ][क-ह]्?$/, '');
-        steps.push(`<b>टि-लोप:</b> प्रत्यय 'डित्' होने से 'टेः' (6.4.143) द्वारा अन्त्य भाग का लोप -> <b>${activeD}</b>`);
+        steps.push(`<b>७. टि-लोप:</b> प्रत्यय 'डित्' होने के कारण 'टेः' (६.४.१४३) से अङ्ग के अन्त्य भाग (टि) का लोप हुआ।`);
+    } else {
+        steps.push(`<b>७. विशेष कार्य:</b> अङ्ग में अन्य किसी विशेष आगम या आदेश की आवश्यकता नहीं है।`);
     }
 
-    // ७. सन्धि कार्य
+    // ८. सन्धि कार्य (Sandhi)
     let res = window.PaniniEngine.applySandhi(activeD, activeP);
-    
-    // ८. उपसर्ग योग
+    steps.push(`<b>८. सन्धि:</b> धातु और प्रत्यय के मेल पर 'संहिता' (६.१.७२) के नियमों से <b>'${window.PaniniEngine.joinSanskrit(res)}'</b> रूप बना।`);
+
+    // ९. उपसर्ग मेल (Upasarga)
     if (upa) {
         let uBase = upa === "आङ्" ? "आ" : upa;
         let finalSandhi = window.PaniniEngine.applySandhi(uBase, res);
-        let joinedU = window.PaniniEngine.joinSanskrit(finalSandhi);
-        steps.push(`<b>उपसर्ग सन्धि:</b> 'उपसर्गाः क्रियायोगे' (1.4.59) के नियमों से सिद्ध रूप बना -> <b>${joinedU}</b>`);
         res = finalSandhi;
+        steps.push(`<b>९. उपसर्ग योग:</b> उपसर्ग '${uBase}' का धातु के साथ 'उपसर्गाः क्रियायोगे' (१.४.५९) के अनुसार संयोजन हुआ।`);
+    } else {
+        steps.push(`<b>९. उपसर्ग विचार:</b> कोई उपसर्ग न होने से रूप अपरिवर्तित रहा।`);
     }
 
+    // १०. पद निर्माण (Final Word formation)
     let final = window.PaniniEngine.joinSanskrit(res);
-    
-    // ९. विभक्ति/लिङ्ग
+    let vibhaktiMsg = "";
     if (pData.gender === "m") {
         final += "ः";
-        steps.push(`<b>पद निर्माण:</b> पुँल्लिङ्ग में सुँ-विभक्ति (विसर्ग) लगकर '<b>${final}</b>' बना।`);
+        vibhaktiMsg = "पुँल्लिङ्ग में 'स्वौजसमौट्...' (४.१.२) से सुँ-प्रत्यय होकर विसर्ग हुआ।";
     } else if (pData.gender === "n") {
         final += "म्";
-        steps.push(`<b>पद निर्माण:</b> नपुंसकलिङ्ग में सुँ को 'अम्' होकर '<b>${final}</b>' बना।`);
+        vibhaktiMsg = "नपुंसकलिङ्ग में 'अतोऽम्' (७.१.२४) से सुँ को अम् आदेश हुआ।";
+    } else {
+        vibhaktiMsg = "अव्यय होने के कारण 'अव्ययादाप्सुपः' (२.४.८२) से विभक्ति का लुक् हुआ।";
     }
+    steps.push(`<b>१०. पद सिद्धि:</b> ${vibhaktiMsg} <br><b>अन्तिम रूप: <span style="color:#ec4899;">${final}</span></b>`);
 
-    // UI Result Display
+    // UI प्रदर्शनी
     document.getElementById("finalOutput").innerText = final;
-    document.getElementById("prakriyaSteps").innerHTML = steps.map((s, i) => `
-        <li class="step-item">
-            <div style="background:#3b82f6; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:bold;">${i+1}</div>
-            <div>${s}</div>
-        </li>`).join("");
-    
+    document.getElementById("prakriyaSteps").innerHTML = steps.map((s) => `<li class="step-item"><div>${s}</div></li>`).join("");
     document.getElementById("resultSection").classList.add("active");
 }
 
+// ... बाकी UI Helpers (toggle, search आदि) पिछले कोड वाले ही रहेंगे ...
 function togglePrakriya() { document.getElementById("prakriyaBox").classList.toggle("show"); }
 function toggleAccordion(e, el) { e.stopPropagation(); el.parentElement.classList.toggle("active"); }
 function toggleSutraDropdown(e) { e.stopPropagation(); document.getElementById("sutraDropdown").classList.toggle("show"); }
@@ -157,13 +143,15 @@ function toggleDark() {
 }
 function openSearchModal() { document.getElementById("searchModal").style.display = "block"; document.getElementById("searchInput").focus(); }
 function closeSearchModal() { document.getElementById("searchModal").style.display = "none"; }
+function toggleMobileMenu() { document.getElementById("nav-menu").classList.toggle("active"); }
+function closeMobileMenu() { document.getElementById("nav-menu").classList.remove("active"); }
 
 function performSearch() {
     let q = document.getElementById("searchInput").value.trim();
     let resDiv = document.getElementById("searchResults");
     if (!q || !sanskritDatabase.examples) return resDiv.innerHTML = "";
     let matched = sanskritDatabase.examples.filter(i => i.ex.includes(q) || (i.sutra && i.sutra.includes(q)));
-    resDiv.innerHTML = matched.map(m => `<div class="result-card"><div class="ex-text sanskrit-text">${m.ex}</div><div class="su-text"><b>सूत्र:</b> ${m.sutra}</div></div>`).join("");
+    resDiv.innerHTML = matched.map(m => `<div class="result-card"><div class="ex-text sanskrit-text">${m.ex}</div><div class="su-text">सूत्र: ${m.sutra}</div></div>`).join("");
 }
 
 window.onload = loadDatabase;
