@@ -1,94 +1,72 @@
 <!DOCTYPE html>
 <html lang="sa">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>संस्कृत मैजिक बिल्डर | WebApp</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Tiro+Devanagari+Sanskrit&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <link rel="stylesheet" href="style.css">
-    
-    <script src="panini_engine.js" defer></script>
-    <script src="script.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>संस्कृत मैजिक बिल्डर | WebApp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Tiro+Devanagari+Sanskrit&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="panini_engine.js" defer></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
-
 <header>
-    <div class="logo"><i class="fa-solid fa-wand-magic-sparkles" style="color:#ec4899;"></i> संस्कृत मैजिक</div>
-    <button class="hamburger" onclick="toggleMobileMenu()"><i class="fa-solid fa-bars" id="menu-icon"></i></button>
-    
-    <nav id="nav-menu">
-        <a href="#" onclick="closeMobileMenu()"><i class="fa-solid fa-house"></i> होम</a>
-        <a href="#" onclick="openSearchModal(); closeMobileMenu();"><i class="fa-solid fa-magnifying-glass"></i> उदाहरण खोजें</a>
-        
-        <div class="nav-dropdown">
-            <button onclick="toggleSutraDropdown(event)"><i class="fa-solid fa-book-open"></i> व्याकरण सूत्र <i class="fa-solid fa-caret-down"></i></button>
-            <div class="dropdown-content" id="sutraDropdown"></div>
-        </div>
-        <button onclick="toggleDark()"><i class="fa-solid fa-moon" id="theme-icon"></i> डार्क मोड</button>
-    </nav>
+    <div class="logo"><i class="fa-solid fa-wand-magic-sparkles" style="color:#ec4899;"></i> संस्कृत मैजिक</div>
+    <button class="hamburger" onclick="toggleMobileMenu()"><i class="fa-solid fa-bars" id="menu-icon"></i></button>
+    <nav id="nav-menu">
+        <a href="#" onclick="closeMobileMenu()"><i class="fa-solid fa-house"></i> होम</a>
+        <a href="#" onclick="openSearchModal(); closeMobileMenu();"><i class="fa-solid fa-magnifying-glass"></i> उदाहरण खोजें</a>
+        <div class="nav-dropdown">
+            <button onclick="toggleSutraDropdown(event)"><i class="fa-solid fa-book-open"></i> व्याकरण सूत्र <i class="fa-solid fa-caret-down"></i></button>
+            <div class="dropdown-content" id="sutraDropdown"></div>
+        </div>
+        <button onclick="toggleDark()"><i class="fa-solid fa-moon" id="theme-icon"></i> डार्क मोड</button>
+    </nav>
 </header>
-
 <section class="hero">
-    <h1>शब्द निर्माण का जादू! ✨</h1>
-    <p>पाणिनीय व्याकरण के अनुसार कृदन्त रूप सिद्ध करें।</p>
+    <h1>शब्द निर्माण का जादू! ✨</h1>
+    <p>पाणिनीय व्याकरण के अनुसार कृदन्त रूप सिद्ध करें।</p>
 </section>
-
 <div class="main-container" id="tool">
-    <div class="card">
-        <div class="input-grid">
-            <div class="input-group">
-                <label class="label-upa"><i class="fa-solid fa-puzzle-piece"></i> उपसर्ग</label>
-                <input type="text" id="upasarga" class="sanskrit-text select-upa" list="upaList" placeholder="उपसर्ग चुनें या लिखें...">
-                <datalist id="upaList"></datalist>
-            </div>
-            
-            <div class="input-group">
-                <label class="label-dhatu"><i class="fa-solid fa-seedling"></i> धातु (मूल)</label>
-                <input type="text" id="dhatu" class="sanskrit-text select-dhatu" list="dhatuList" placeholder="धातु चुनें या लिखें...">
-                <datalist id="dhatuList"></datalist>
-            </div>
-            
-            <div class="input-group">
-                <label class="label-prat"><i class="fa-solid fa-link"></i> प्रत्यय</label>
-                <input type="text" id="pratyaya" class="sanskrit-text select-prat" list="pratList" placeholder="प्रत्यय चुनें या लिखें...">
-                <datalist id="pratList"></datalist>
-            </div>
-        </div>
-
-        <button class="btn-generate" onclick="generateKridanta()">
-            <i class="fa-solid fa-bolt"></i> शब्द बनाओ!
-        </button>
-
-        <div class="result-section" id="resultSection">
-            <div class="result-box" onclick="togglePrakriya()">
-                <div class="result-text sanskrit-text" id="finalOutput"></div>
-                <div class="hint"><i class="fa-solid fa-hand-pointer"></i> यह कैसे बना? (विस्तृत १० चरण देखें)</div>
-            </div>
-
-            <div class="prakriya-box" id="prakriyaBox">
-                <div class="prakriya-title"><i class="fa-solid fa-list-check"></i> पाणिनीय सिद्धि प्रक्रिया:</div>
-                <ul class="step-list sanskrit-text" id="prakriyaSteps">
-                    </ul>
-            </div>
-        </div>
-    </div>
+    <div class="card">
+        <div class="input-grid">
+            <div class="input-group">
+                <label class="label-upa"><i class="fa-solid fa-puzzle-piece"></i> उपसर्ग</label>
+                <input type="text" id="upasarga" class="sanskrit-text" list="upaList" placeholder="उपसर्ग चुनें...">
+                <datalist id="upaList"></datalist>
+            </div>
+            <div class="input-group">
+                <label class="label-dhatu"><i class="fa-solid fa-seedling"></i> धातु</label>
+                <input type="text" id="dhatu" class="sanskrit-text" list="dhatuList" placeholder="धातु चुनें...">
+                <datalist id="dhatuList"></datalist>
+            </div>
+            <div class="input-group">
+                <label class="label-prat"><i class="fa-solid fa-link"></i> प्रत्यय</label>
+                <input type="text" id="pratyaya" class="sanskrit-text" list="pratList" placeholder="प्रत्यय चुनें...">
+                <datalist id="pratList"></datalist>
+            </div>
+        </div>
+        <button class="btn-generate" onclick="generateKridanta()"><i class="fa-solid fa-bolt"></i> शब्द बनाओ!</button>
+        <div class="result-section" id="resultSection">
+            <div class="result-box" onclick="togglePrakriya()">
+                <div class="result-text sanskrit-text" id="finalOutput"></div>
+                <div class="hint">यह कैसे बना? (यहाँ टैप करें)</div>
+            </div>
+            <div class="prakriya-box" id="prakriyaBox">
+                <div class="prakriya-title">बनने की कहानी:</div>
+                <ul class="step-list sanskrit-text" id="prakriyaSteps"></ul>
+            </div>
+        </div>
+    </div>
 </div>
-
 <div id="searchModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="closeSearchModal()">&times;</span>
-        <h2 style="margin-bottom:15px;"><i class="fa-solid fa-magnifying-glass" style="color:#ec4899;"></i> उदाहरण खोजें</h2>
-        <input type="text" id="searchInput" class="sanskrit-text" placeholder="शब्द या सूत्र लिखें..." onkeyup="performSearch()">
-        <div id="searchResults" class="search-results"></div>
-    </div>
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeSearchModal()">&times;</span>
+        <h2>उदाहरण खोजें</h2>
+        <input type="text" id="searchInput" class="sanskrit-text" placeholder="यहाँ टाइप करें..." onkeyup="performSearch()">
+        <div id="searchResults" class="search-results"></div>
+    </div>
 </div>
-
-<footer style="text-align: center; padding: 40px 20px; opacity: 0.7;">
-    <p class="sanskrit-text">॥ पाणिनिर्वन्द्यते नित्यं येन व्याप्तं जगत्त्रयम् ॥</p>
-</footer>
-
 </body>
 </html>
