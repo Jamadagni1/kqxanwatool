@@ -1,205 +1,66 @@
-:root {
-    /* Light Theme */
-    --bg-light: #f0fdf4;
-    --card-light: #ffffff;
-    --text-light: #334155;
-    --border-light: #e2e8f0;
-
-    /* Dark Theme */
-    --bg-dark: #12121e;
-    --card-dark: #1e1e2f;
-    --text-dark: #f8fafc;
-    --border-dark: #334155;
-
-    /* Accent Colors */
-    --color-upa: #10b981;
-    --color-upa-bg: #ecfdf5;
-    --color-dhatu: #3b82f6;
-    --color-dhatu-bg: #eff6ff;
-    --color-prat: #f97316;
-    --color-prat-bg: #fff7ed;
-
-    --gradient-btn: linear-gradient(135deg, #8b5cf6, #ec4899);
-    --gradient-text: linear-gradient(135deg, #ec4899, #f43f5e, #f59e0b);
-
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    --shadow-hover: 0 15px 40px rgba(0, 0, 0, 0.12);
+/* --- INPUT GRID & STYLING --- */
+.input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* बॉक्स थोड़े और चौड़े */
+    gap: 25px; /* गैप बढ़ाया */
+    margin-bottom: 40px;
 }
 
-/* --- GLOBAL RESETS & TYPOGRAPHY --- */
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Baloo 2', cursive; }
-html { scroll-behavior: smooth; }
-body { background: var(--bg-light); color: var(--text-light); transition: background 0.3s, color 0.3s; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
-
-body.dark { 
-    background: var(--bg-dark); color: var(--text-dark);
-    --color-upa-bg: rgba(16, 185, 129, 0.1); --color-dhatu-bg: rgba(59, 130, 246, 0.1); --color-prat-bg: rgba(249, 115, 22, 0.1);
-    --card-light: var(--card-dark); --border-light: var(--border-dark); --text-light: var(--text-dark); --bg-light: rgba(255,255,255,0.05); --shadow: 0 10px 30px rgba(0,0,0,0.4);
+.input-group {
+    display: flex;
+    flex-direction: column;
 }
 
-.sanskrit-text { font-family: 'Tiro Devanagari Sanskrit', serif; font-size: 1.1em; }
-
-/* --- HEADER & NAVIGATION --- */
-header { position: fixed; width: 100%; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; height: 70px; }
-body.dark header { background: rgba(30, 30, 47, 0.95); box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
-
-.logo { font-weight: 800; font-size: clamp(20px, 4vw, 26px); display: flex; align-items: center; gap: 8px; background: var(--gradient-btn); -webkit-background-clip: text; color: transparent; }
-
-nav { display: flex; gap: 20px; align-items: center; }
-nav button, nav a { color: var(--text-light); text-decoration: none; font-weight: 700; font-size: 18px; background: none; border: none; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
-nav button:hover, nav a:hover { color: #ec4899; }
-
-.hamburger { display: none; font-size: 26px; cursor: pointer; color: var(--text-light); border: none; background: none; }
-
-/* --- DROPDOWN SUTRAS --- */
-.nav-dropdown { position: relative; }
-.dropdown-content { display: none; position: absolute; top: 140%; left: 50%; transform: translateX(-50%); background: var(--card-light); min-width: 400px; max-width: 90vw; max-height: 60vh; overflow-y: auto; box-shadow: var(--shadow-hover); border-radius: 16px; border: 2px solid var(--border-light); z-index: 2000; padding: 15px; }
-.dropdown-content.show { display: block; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-
-.sutra-item { margin-bottom: 10px; background: var(--bg-light); border-radius: 12px; border: 1px solid var(--border-light); overflow: hidden; transition: 0.3s; }
-body.dark .sutra-item { background: rgba(0,0,0,0.2); }
-.sutra-header { padding: 12px 15px; cursor: pointer; font-weight: 700; font-size: 16px; display: flex; justify-content: space-between; align-items: center; color: #8b5cf6; }
-.sutra-desc { padding: 0 15px; max-height: 0; overflow: hidden; transition: 0.4s ease; font-size: 14px; line-height: 1.6; opacity: 0; }
-.sutra-item.active .sutra-desc { padding: 0 15px 15px 15px; max-height: 300px; opacity: 1; }
-.sutra-item.active .sutra-header i { transform: rotate(180deg); color: #ec4899; }
-
-/* --- HERO SECTION --- */
-.hero { margin-top: 90px; padding: 40px 20px 20px; text-align: center; }
-.hero h1 { font-size: clamp(2.2rem, 6vw, 3.5rem); font-weight: 800; margin-bottom: 10px; background: var(--gradient-text); -webkit-background-clip: text; color: transparent; line-height: 1.2; }
-.hero p { font-size: clamp(1.1rem, 3vw, 1.4rem); opacity: 0.8; font-weight: 500; max-width: 600px; margin: 0 auto; }
-
-/* --- MAIN APP CARD --- */
-.main-container { flex: 1; padding: 10px 5% 50px; display: flex; justify-content: center; }
-.card { width: 100%; max-width: 850px; background: var(--card-light); padding: clamp(20px, 5vw, 50px); border-radius: clamp(16px, 4vw, 30px); box-shadow: var(--shadow); border: 2px solid var(--border-light); transition: 0.3s; }
-
-/* --- INPUT GRID --- */
-.input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
-
-.input-group label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 800; font-size: clamp(16px, 3vw, 20px); }
-.label-upa { color: var(--color-upa); } .label-dhatu { color: var(--color-dhatu); } .label-prat { color: var(--color-prat); }
-
-select { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border-light); font-size: clamp(16px, 3vw, 20px); font-weight: 600; outline: none; transition: 0.3s; cursor: pointer; appearance: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
-
-.select-upa { background-color: var(--color-upa-bg); color: var(--color-upa); }
-.select-dhatu { background-color: var(--color-dhatu-bg); color: var(--color-dhatu); }
-.select-prat { background-color: var(--color-prat-bg); color: var(--color-prat); }
-
-.select-upa:focus { border-color: var(--color-upa); }
-.select-dhatu:focus { border-color: var(--color-dhatu); }
-.select-prat:focus { border-color: var(--color-prat); }
-
-/* --- MAGIC BUTTON --- */
-.btn-generate { width: 100%; padding: 18px; border: none; border-radius: 16px; background: var(--gradient-btn); color: white; font-size: clamp(20px, 4vw, 24px); font-weight: 800; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 20px rgba(236, 72, 153, 0.4); display: flex; justify-content: center; align-items: center; gap: 10px; }
-.btn-generate:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(236, 72, 153, 0.6); }
-
-/* --- GIANT RESULT BOX --- */
-.result-section { margin-top: 30px; display: none; }
-.result-section.active { display: block; animation: popIn 0.5s ease; }
-.result-box { padding: clamp(20px, 5vw, 40px) 15px; border-radius: 20px; background: var(--bg-light); border: 3px dashed #f43f5e; text-align: center; cursor: pointer; transition: 0.3s; overflow: hidden; }
-body.dark .result-box { background: rgba(244, 63, 94, 0.05); }
-
-.result-text { font-size: clamp(40px, 8vw, 65px); font-weight: 800; line-height: 1.2; background: var(--gradient-text); -webkit-background-clip: text; color: transparent; word-break: break-word; }
-.hint { font-size: 14px; color: #64748b; margin-top: 15px; font-weight: 700; background: var(--border-light); display: inline-block; padding: 6px 15px; border-radius: 50px; }
-
-/* --- COLORFUL PRAKRIYA (STEPS) --- */
-.prakriya-box { margin-top: 20px; padding: clamp(15px, 4vw, 25px); background: var(--card-light); border-radius: 16px; display: none; border: 2px solid var(--border-light); box-shadow: inset 0 0 15px rgba(0,0,0,0.02); }
-.prakriya-box.show { display: block; animation: slideDown 0.4s ease; }
-.prakriya-title { font-size: clamp(18px, 4vw, 22px); font-weight: 800; margin-bottom: 15px; color: #8b5cf6; display: flex; align-items: center; gap: 8px; }
-
-.step-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-.step-item { padding: 12px 15px; background: var(--bg-light); border-radius: 10px; font-size: clamp(15px, 3.5vw, 18px); font-weight: 500; display: flex; gap: 12px; align-items: flex-start; border-left: 5px solid #3b82f6; }
-body.dark .step-item { background: rgba(59, 130, 246, 0.1); }
-
-/* --- FOOTER --- */
-footer { background: var(--card-light); padding: 40px 5% 20px; border-top: 1px solid var(--border-light); margin-top: auto; }
-.footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; margin-bottom: 20px; }
-.footer-col h3 { margin-bottom: 15px; font-size: 20px; font-weight: 700; color: #ec4899; }
-.footer-col p, .footer-col a { color: var(--text-light); font-size: 15px; text-decoration: none; display: block; margin-bottom: 8px; font-weight: 500; transition: 0.3s; }
-.footer-col a:hover { color: #8b5cf6; }
-
-/* --- ANIMATIONS --- */
-@keyframes popIn { 0% { opacity: 0; transform: scale(0.95) translateY(10px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
-@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-/* --- MOBILE RESPONSIVENESS --- */
-@media (max-width: 768px) {
-    .hamburger { display: block; }
-    nav { position: fixed; top: 70px; left: -100%; width: 100%; height: calc(100vh - 70px); background: var(--card-light); flex-direction: column; align-items: flex-start; padding: 30px; transition: 0.3s ease-in-out; box-shadow: inset 0 10px 10px -10px rgba(0,0,0,0.1); overflow-y: auto; }
-    nav.active { left: 0; }
-
-    nav a, nav button { font-size: 22px; width: 100%; padding: 15px 0; border-bottom: 1px solid var(--border-light); justify-content: flex-start; }
-
-    .nav-dropdown { width: 100%; }
-    .dropdown-content { position: static; transform: none; width: 100%; box-shadow: none; border: none; padding: 15px 0 0; background: transparent; min-width: auto; max-height: none; }
-    body.dark .dropdown-content { background: transparent; }
+/* लेबल को और सुंदर बनाया */
+.input-group label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-weight: 800;
+    font-size: 20px; /* फॉन्ट साइज बढ़ाया */
+    letter-spacing: 0.5px;
 }
 
-/* =========================================
-   🔍 Search Modal Styles 
-   ========================================= */
-.modal {
-    display: none; 
-    position: fixed; 
-    z-index: 1000; 
-    left: 0; top: 0; 
-    width: 100%; height: 100%; 
-    background-color: rgba(0,0,0,0.6); 
-    backdrop-filter: blur(4px);
-}
-
-.modal-content {
-    background-color: var(--card-light);
-    margin: 10% auto; 
-    padding: 25px;
-    border-radius: 15px;
-    width: 90%; 
-    max-width: 500px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    position: relative;
-    animation: slideDown 0.3s ease-out;
-}
-
-.close-btn {
-    color: var(--text-light);
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-.close-btn:hover { color: #ec4899; }
-
-#searchInput {
+/* इनपुट और सेलेक्ट बॉक्स को बड़ा और Attractive बनाया */
+input[type="text"], select {
     width: 100%;
-    padding: 12px 15px;
-    font-size: 18px;
+    padding: 18px 20px; /* पैडिंग बढ़ाई ताकि बॉक्स बड़ा दिखे */
+    border-radius: 16px; /* कोनों को और गोल किया */
     border: 2px solid var(--border-light);
-    border-radius: 8px;
-    margin-bottom: 20px;
-    background: var(--bg-light);
-    color: var(--text-light);
-}
-
-#searchInput:focus {
-    border-color: #3b82f6;
+    font-size: 22px; /* टाइपिंग फॉन्ट बड़ा किया */
+    font-weight: 700;
     outline: none;
+    transition: all 0.3s ease;
+    background: var(--card-light);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    cursor: pointer;
 }
 
-.search-results {
-    max-height: 300px;
-    overflow-y: auto;
+/* क्लिक करने पर ग्लो इफेक्ट (Focus Effect) */
+.select-upa:focus { 
+    border-color: var(--color-upa); 
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); 
+    transform: translateY(-2px); 
+}
+.select-dhatu:focus { 
+    border-color: var(--color-dhatu); 
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); 
+    transform: translateY(-2px); 
+}
+.select-prat:focus { 
+    border-color: var(--color-prat); 
+    box-shadow: 0 0 15px rgba(249, 115, 22, 0.2); 
+    transform: translateY(-2px); 
 }
 
-.result-card {
-    background: var(--bg-light);
-    border-left: 4px solid #ec4899;
-    padding: 12px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+/* मोबाइल के लिए विशेष सुधार */
+@media (max-width: 480px) {
+    .card {
+        padding: 25px 15px;
+    }
+    input[type="text"], select {
+        font-size: 20px;
+        padding: 15px;
+    }
 }
-
-.ex-text { font-size: 1.2em; font-weight: bold; color: #ec4899; margin-bottom: 5px; }
-.su-text { font-size: 1em; color: var(--text-light); margin-bottom: 3px; }
-.desc-text { font-size: 0.9em; color: var(--text-light); opacity: 0.8; }
