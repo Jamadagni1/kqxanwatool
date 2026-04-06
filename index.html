@@ -1,141 +1,165 @@
-// १. व्याकरण इंजन (All-in-One)
-const PaniniRules = {
-    vowels: "अआइईउऊऋएऐओऔ",
-    join: function(t) {
-        if (!t) return "";
-        const m = { '्अ': '', '्आ': 'ा', '्इ': 'ि', '्ई': 'ी', '्उ': 'ु', '्ऊ': 'ू', '्ऋ': 'ृ', '्ए': 'े', '्ऐ': 'ै', '्ओ': 'ो', '्औ': 'ौ' };
-        for (let k in m) t = t.split(k).join(m[k]);
-        return t;
-    },
-    autoGuna: d => d.replace(/ि|ी$/, 'े').replace(/ु|ू$/, 'ो').replace(/ृ$/, 'र्').replace(/ि([क-ह]्)$/, 'े$1').replace(/ु([क-ह]्)$/, 'ो$1').replace(/ृ([क-ह]्)$/, 'र्$1'),
-    autoVriddhi: d => d.replace(/ि|ी$/, 'ै').replace(/ु|ू$/, 'ौ').replace(/ृ$/, 'ार्').replace(/([क-ह])([क-ह]्)$/, '$1ा$2').replace(/ि([क-ह]्)$/, 'ै$1').replace(/ु([क-ह]्)$/, 'ौ$1').replace(/ृ([क-ह]्)$/, 'ार्$1'),
-    applySandhi: function(w1, w2) {
-        if (!w1 || !w2) return w1 + w2;
-        if ((w1.endsWith('ज्') || w1.endsWith('च्')) && !this.vowels.includes(w2[0])) w1 = w1.replace(/[ज्छ्]$/, 'क्');
-        let base = w1.slice(0, -1), last = w1.slice(-1), f = w2[0], rest = w2.slice(1);
-        if (this.vowels.includes(f)) {
-            if (last === 'ु' || last === 'ू') return base + '्' + this.join('व्' + f) + rest;
-            if (last === 'ि' || last === 'ी') return base + '्' + this.join('य्' + f) + rest;
-            if (last === '्') return w1 + f + rest;
+<!DOCTYPE html>
+<html lang="sa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>संस्कृत शब्द प्रक्रिया | Ashtadhyayi Engine v2.0</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Tiro+Devanagari+Sanskrit&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* टाइपिंग बॉक्स और Attractive UI के लिए विशेष सुधार */
+        .input-group input[type="text"] { 
+            width: 100%; 
+            padding: 18px 20px; 
+            border-radius: 16px; 
+            border: 2px solid var(--border-light); 
+            font-size: clamp(18px, 3vw, 22px); 
+            font-weight: 700; 
+            outline: none; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            background: var(--card-light);
         }
-        if (last === 'क्' && f === 'त') return base + 'क्त' + rest;
-        if (last === 'श्' && f === 'त') return base + 'ष्ट' + rest;
-        if (last === 'म्' && !this.vowels.includes(f)) return base + 'ं' + f + rest;
-        return w1 + w2;
-    }
-};
 
-// २. डेटाबेस
-let sanskritDatabase = { upasargas: [], dhatus: {}, examples: [] };
-let pratyayaDB = {}; 
+        /* इनपुट बॉक्स फोकस/ग्लो इफेक्ट */
+        .select-upa:focus { border-color: var(--color-upa) !important; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); transform: translateY(-2px); }
+        .select-dhatu:focus { border-color: var(--color-dhatu) !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); transform: translateY(-2px); }
+        .select-prat:focus { border-color: var(--color-prat) !important; box-shadow: 0 0 15px rgba(249, 115, 22, 0.2); transform: translateY(-2px); }
 
-// ३. डेटा लोड करने का सबसे सुरक्षित तरीका
-async function loadDatabase() {
-    const timestamp = new Date().getTime();
-    const files = [
-        { key: 'dhatus', url: 'dhatus.json' },
-        { key: 'sutras', url: 'sutras.json' },
-        { key: 'examples', url: 'examples.json' },
-        { key: 'pratyayas', url: 'pratyayas.json' }
-    ];
+        /* सिद्धि चरणों के लिए डिजाइन */
+        .step-item {
+            background: var(--bg-light);
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            border-left: 5px solid #3b82f6;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+        
+        #loadingOverlay {
+            position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8);
+            z-index: 9999; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: #ec4899;
+        }
+        body.dark #loadingOverlay { background:rgba(18, 18, 30, 0.9); }
+    </style>
+</head>
+<body>
 
-    for (const file of files) {
-        try {
-            console.log(`Loading: ${file.url}...`);
-            const response = await fetch(`${file.url}?v=${timestamp}`);
-            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-            const data = await response.json();
+<div id="loadingOverlay" class="sanskrit-text">
+    <i class="fa-solid fa-gear fa-spin"></i> &nbsp; अष्टाध्यायी डेटा लोड हो रहा है...
+</div>
+
+<header>
+    <div class="logo" onclick="location.reload()" style="cursor:pointer;">
+        <i class="fa-solid fa-wand-magic-sparkles" style="color:#ec4899;"></i> संस्कृत शब्द प्रक्रिया
+    </div>
+    <button class="hamburger" onclick="toggleMobileMenu()">
+        <i class="fa-solid fa-bars" id="menu-icon"></i>
+    </button>
+
+    <nav id="nav-menu">
+        <a href="#" onclick="closeMobileMenu()"><i class="fa-solid fa-house"></i> होम</a>
+        <a href="#" onclick="openSearchModal(); closeMobileMenu();"><i class="fa-solid fa-magnifying-glass"></i> उदाहरण खोजें</a>
+        
+        <div class="nav-dropdown">
+            <button onclick="toggleSutraDropdown(event)">
+                <i class="fa-solid fa-book-open"></i> व्याकरण सूत्र <i class="fa-solid fa-caret-down"></i>
+            </button>
+            <div class="dropdown-content" id="sutraDropdown"></div>
+        </div>
+        <button onclick="toggleDark()"><i class="fa-solid fa-moon" id="theme-icon"></i> डार्क मोड</button>
+    </nav>
+</header>
+
+<section class="hero">
+    <h1>शब्द निर्माण का जादू! ✨</h1>
+    <p>अष्टाध्यायी के सूत्रों के साथ शुद्ध रूप सिद्धि (१० विस्तृत चरण)</p>
+</section>
+
+<div class="main-container" id="tool">
+    <div class="card">
+        <div class="input-grid">
+            <div class="input-group">
+                <label class="label-upa"><i class="fa-solid fa-puzzle-piece"></i> उपसर्ग</label>
+                <input type="text" id="upasarga" class="sanskrit-text select-upa" list="upaList" placeholder="उपसर्ग..." autocomplete="off">
+                <datalist id="upaList"></datalist>
+            </div>
             
-            if (file.key === 'dhatus') {
-                sanskritDatabase.dhatus = data.dhatus || {};
-                sanskritDatabase.upasargas = data.upasargas || [];
-            } else if (file.key === 'pratyayas') {
-                pratyayaDB = data.pratyayaDB || {};
-            } else if (file.key === 'examples') {
-                sanskritDatabase.examples = data.examples || [];
-            } else {
-                Object.assign(sanskritDatabase, data);
-            }
-        } catch (e) {
-            console.error(`❌ ${file.key} लोड करने में फेल:`, e.message);
-            // स्क्रीन पर मैसेज दिखाएँ
-            const errDiv = document.createElement('div');
-            errDiv.style.cssText = "background:red; color:white; padding:5px; font-size:12px; position:fixed; bottom:0; width:100%; z-index:9999;";
-            errDiv.innerText = `चेतावनी: ${file.key}.json नहीं मिली। फाइल का नाम चेक करें।`;
-            document.body.appendChild(errDiv);
-        }
-    }
-    initializeUI();
-}
+            <div class="input-group">
+                <label class="label-dhatu"><i class="fa-solid fa-seedling"></i> धातु (मूल)</label>
+                <input type="text" id="dhatu" class="sanskrit-text select-dhatu" list="dhatuList" placeholder="उदा. कृ, पठ्, एध..." autocomplete="off">
+                <datalist id="dhatuList"></datalist>
+            </div>
+            
+            <div class="input-group">
+                <label class="label-prat"><i class="fa-solid fa-link"></i> प्रत्यय</label>
+                <input type="text" id="pratyaya" class="sanskrit-text select-prat" list="pratList" placeholder="उदा. अच्, क्त, घञ्..." autocomplete="off">
+                <datalist id="pratList"></datalist>
+            </div>
+        </div>
 
-function initializeUI() {
-    const upa = document.getElementById("upaList"), dht = document.getElementById("dhatuList"), prt = document.getElementById("pratList"), sut = document.getElementById("sutraDropdown");
-    
-    if (upa) upa.innerHTML = (sanskritDatabase.upasargas || []).map(u => `<option value="${u.id}">${u.label}</option>`).join("");
-    if (dht) dht.innerHTML = Object.keys(sanskritDatabase.dhatus || {}).map(k => `<option value="${k}">${sanskritDatabase.dhatus[k].label || k}</option>`).join("");
-    if (prt) prt.innerHTML = Object.keys(pratyayaDB || {}).map(k => `<option value="${k}">${k}</option>`).join("");
-    
-    if (sut) {
-        sut.innerHTML = "";
-        Object.keys(sanskritDatabase).forEach(k => {
-            if (Array.isArray(sanskritDatabase[k]) && (k.startsWith('pada') || k.includes('Sutras'))) {
-                sanskritDatabase[k].forEach(s => {
-                    sut.insertAdjacentHTML('beforeend', `<div class="sutra-item"><div class="sutra-header sanskrit-text" onclick="toggleAccordion(event, this)">[${s.id || ''}] ${s.name}</div><div class="sutra-desc">${s.desc}</div></div>`);
-                });
-            }
-        });
-    }
-    console.log("UI Initialization Complete.");
-}
+        <button class="btn-generate" onclick="generateKridanta()">
+            <i class="fa-solid fa-bolt"></i> शब्द बनाओ!
+        </button>
 
-// बाकी generateKridanta और UI Helpers वही रहेंगे...
-function generateKridanta() {
-    const upa = document.getElementById("upasarga").value.trim();
-    const dhatuStr = document.getElementById("dhatu").value.trim();
-    const rawPrat = document.getElementById("pratyaya").value.trim();
+        <div class="result-section" id="resultSection">
+            <div class="result-box" onclick="togglePrakriya()">
+                <div class="result-text sanskrit-text" id="finalOutput"></div>
+                <div class="hint"><i class="fa-solid fa-hand-pointer"></i> यह कैसे बना? (१० विस्तृत चरण देखें)</div>
+            </div>
 
-    if(!dhatuStr || !rawPrat) return alert("कृपया धातु और प्रत्यय चुनें!");
+            <div class="prakriya-box" id="prakriyaBox">
+                <div class="prakriya-title"><i class="fa-solid fa-list-check"></i> पाणिनीय सिद्धि प्रक्रिया:</div>
+                <ul class="step-list sanskrit-text" id="prakriyaSteps">
+                    </ul>
+            </div>
+        </div>
+    </div>
+</div>
 
-    let steps = [];
-    let dData = sanskritDatabase.dhatus[dhatuStr] || { clean: dhatuStr, isSet: true, anubandha: "none" };
-    let pData = pratyayaDB[rawPrat] || { real: rawPrat, type: "akit", lopa: "कोई नहीं" };
-    let activeD = dData.clean, activeP = pData.real;
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeSearchModal()">&times;</span>
+        <h2 style="color: var(--text-dark); margin-bottom: 10px;">
+            <i class="fa-solid fa-magnifying-glass" style="color:#ec4899;"></i> उदाहरण खोजें
+        </h2>
+        <p style="margin-bottom: 20px; font-size: 0.9em; color: var(--text-light);">
+            धातु, प्रत्यय या सूत्र संख्या से खोजें...
+        </p>
+        
+        <input type="text" id="searchInput" class="sanskrit-text" placeholder="यहाँ टाइप करें..." onkeyup="performSearch()" autocomplete="off">
+        
+        <div id="searchResults" class="search-results"></div>
+    </div>
+</div>
 
-    steps.push(`<b>१. आरम्भ:</b> ${upa ? upa + ' + ' : ''}${dhatuStr} + ${rawPrat}`);
-    if(dData.anubandha !== "none") steps.push(`<b>२. इत्-लोप:</b> धातु अनुबंध '${dData.anubandha}' लुप्त। शेष: <b>${activeD}</b>`);
-    if (rawPrat === "क्त्वा" && upa !== "") { steps.push(`<b>३. आदेश:</b> उपसर्ग निमित्त 'क्त्वा' -> <b>ल्यप्</b>।`); pData = pratyayaDB["ल्यप्"]; activeP = pData.real; }
-    steps.push(`<b>४. प्रत्यय शुद्धि:</b> इत्-लोप के बाद बचा: <b>${activeP}</b>`);
+<footer>
+    <div class="footer-grid">
+        <div class="footer-col" style="text-align: center;">
+            <h3>संस्कृत मैजिक - पाणिनीय व्याकरण इंजन</h3>
+            <p>हजारों धातुओं और सूत्रों पर आधारित शुद्ध शब्द सिद्धि प्रणाली।</p>
+            <p style="margin-top:20px; font-size: 0.9em; font-weight: bold;" class="sanskrit-text">
+                ॥ नामिन् - संतोष के. द्वारा निर्मित ॥
+            </p>
+        </div>
+    </div>
+</footer>
 
-    if (pData.type.includes("kit") || pData.type.includes("ngit")) { steps.push(`<b>५. गुण निषेध:</b> 'क्ङिति च' से गुण/वृद्धि निषिद्ध।`); } 
-    else if (pData.type.includes("nit")) { activeD = PaniniRules.autoVriddhi(activeD); steps.push(`<b>५. वृद्धि:</b> ञित्/णित् परे वृद्धि -> <b>${activeD}</b>`); } 
-    else { activeD = PaniniRules.autoGuna(activeD); steps.push(`<b>५. गुण:</b> गुण कार्य सम्पन्न -> <b>${activeD}</b>`); }
+<script>
+    // लोडिंग ओवरले हटाने के लिए
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }, 1000);
+    });
+</script>
 
-    if (activeD.endsWith('ज्') || activeD.endsWith('च्')) { activeD = activeD.replace(/[ज्छ्]$/, 'क्'); steps.push(`<b>६. कुत्व:</b> 'चोः कुः' से च्/ज् -> <b>क्</b>।`); }
-    let res = PaniniRules.applySandhi(activeD, activeP);
-    steps.push(`<b>७. सन्धि:</b> वर्ण मेल से <b>${PaniniRules.join(res)}</b> बना।`);
-
-    if (upa) { let uBase = upa === "आङ्" ? "आ" : upa; res = PaniniRules.applySandhi(uBase, res); steps.push(`<b>८. उपसर्ग योग:</b> '${uBase}' के साथ सन्धि।`); }
-    let final = PaniniRules.join(res);
-    if (pData.gender === "m") final += "ः"; else if (pData.gender === "n") final += "म्";
-    steps.push(`<b>९. पद सिद्धि:</b> सुँ-विभक्ति कार्य सम्पन्न।`);
-    steps.push(`<b>१०. फल:</b> <b>${final}</b> सिद्ध हुआ।`);
-
-    document.getElementById("finalOutput").innerText = final;
-    document.getElementById("prakriyaSteps").innerHTML = steps.map(s => `<li class="step-item"><div>${s}</div></li>`).join("");
-    document.getElementById("resultSection").classList.add("active");
-}
-
-function togglePrakriya() { document.getElementById("prakriyaBox").classList.toggle("show"); }
-function toggleAccordion(e, el) { e.stopPropagation(); el.parentElement.classList.toggle("active"); }
-function toggleSutraDropdown(e) { e.stopPropagation(); document.getElementById("sutraDropdown").classList.toggle("show"); }
-function toggleDark() { document.body.classList.toggle("dark"); }
-function openSearchModal() { document.getElementById("searchModal").style.display = "block"; }
-function closeSearchModal() { document.getElementById("searchModal").style.display = "none"; }
-function performSearch() {
-    let q = document.getElementById("searchInput").value.trim();
-    let resDiv = document.getElementById("searchResults");
-    if (!q || !sanskritDatabase.examples) return;
-    let matched = sanskritDatabase.examples.filter(i => i.ex.includes(q) || (i.sutra && i.sutra.includes(q)));
-    resDiv.innerHTML = matched.map(m => `<div class="result-card"><div class="ex-text">${m.ex}</div><div class="su-text">सूत्र: ${m.sutra}</div></div>`).join("");
-}
-window.onload = loadDatabase;
+</body>
+</html>
