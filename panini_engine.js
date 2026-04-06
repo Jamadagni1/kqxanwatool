@@ -1,214 +1,128 @@
 window.PaniniEngine = {
-
-    // ======================================
-    // VOWELS
-    // ======================================
     vowels: ['अ','आ','इ','ई','उ','ऊ','ऋ','ए','ऐ','ओ','औ'],
 
-    // ======================================
-    // DHATU DATABASE (sample extendable)
-    // ======================================
     dhatuDB: {
-        "भुज्": { gana: "भ्वादि", isSet: true },
-        "गम्": { gana: "भ्वादि", isSet: false },
-        "कृ": { gana: "तनादि", isSet: true },
-        "नी": { gana: "दिवादि", isSet: true },
-        "पच्": { gana: "भ्वादि", isSet: true },
-        "लिख्": { gana: "तुदादि", isSet: false }
+        "भुज्": { clean: "भुज्", isSet: true },
+        "गम्": { clean: "गम्", isSet: false },
+        "कृ": { clean: "कृ", isSet: true },
+        "नी": { clean: "नी", isSet: true },
+        "पच्": { clean: "पच्", isSet: true },
+        "लिख्": { clean: "लिख्", isSet: false },
+        "एध": { clean: "एध्", isSet: true }
     },
 
-    // ======================================
-    // KRIT PRATYAYA DATABASE
-    // ======================================
     kritDB: {
-        "क्त": { type: "kit" },
-        "क्त्वा": { type: "kit", tuk: true },
-        "ल्यप्": { type: "kit" },
-        "तव्य": { type: "kit" },
-        "अनीयर्": { type: "kit" },
-
-        "तृच्": { type: "nit", kutva: true },
-        "शतृ": { type: "nit" },
-        "शानच्": { type: "nit" },
-
-        "तुमुन्": { type: "anit" },
-        "क्तिन्": { type: "anit" }
+        "क्त": { real: "त", type: "kit" },
+        "क्त्वा": { real: "त्वा", type: "kit", tuk: true },
+        "ल्यप्": { real: "य", type: "kit" },
+        "तव्य": { real: "तव्य", type: "akit" },
+        "अनीयर्": { real: "अनीय", type: "akit" },
+        "तृच्": { real: "तृ", type: "nit", kutva: true },
+        "शतृ": { real: "अत्", type: "nit" },
+        "शानच्": { real: "आन", type: "nit" },
+        "तुमुन्": { real: "तुम्", type: "anit" },
+        "क्तिन्": { real: "ति", type: "kit" },
+        "अच्": { real: "अ", type: "akit" }
     },
 
-    // ======================================
-    // JOIN FUNCTION
-    // ======================================
+    // १. वर्ण संयोजन मशीन
     join: function(text) {
+        if (!text) return "";
         const map = {
-            'अअ': 'आ', 'अइ': 'ए', 'अउ': 'ओ',
-            'आइ': 'ऐ', 'आउ': 'औ',
-
-            '्अ': '', '्आ': 'ा', '्इ': 'ि', '्ई': 'ी',
-            '्उ': 'ु', '्ऊ': 'ू', '्ऋ': 'ृ',
-            '्ए': 'े', '्ऐ': 'ै', '्ओ': 'ो', '्औ': 'ौ'
+            '्अ': '', '्आ': 'ा', '्इ': 'ि', '्ई': 'ी', '्उ': 'ु', '्ऊ': 'ू',
+            '्ऋ': 'ृ', '्ए': 'े', '्ऐ': 'ै', '्ओ': 'ो', '्औ': 'ौ'
         };
-        for (let k in map) text = text.split(k).join(map[k]);
-        return text;
+        let res = text;
+        for (let k in map) res = res.split(k).join(map[k]);
+        return res;
     },
 
-    // ======================================
-    // GUNA / VRIDDHI
-    // ======================================
-    guna: d => d.replace(/ि|ी$/, 'े').replace(/ु|ू$/, 'ो').replace(/ृ$/, 'र्'),
-    vriddhi: d => d.replace(/ि|ी$/, 'ै').replace(/ु|ू$/, 'ौ').replace(/ृ$/, 'ार्'),
-
-    // ======================================
-    // MAIN DERIVATION ENGINE
-    // ======================================
-    derive: function(dhatu, pratyaya) {
-
-        let steps = [];
-        let dData = this.dhatuDB[dhatu] || { isSet: true };
-        let pData = this.kritDB[pratyaya] || { type: "anit" };
-
-        let base = dhatu;
-
-        steps.push(`🔹 Start: ${dhatu} + ${pratyaya}`);
-
-        // =========================
-        // 1. गुण / वृद्धि
-        // =========================
-        if (pData.type === "kit" || pData.type === "git") {
-            steps.push(`❌ (1.1.5) क्ङिति च → गुण/वृद्धि निषिद्ध`);
-        }
-        else if (pData.type === "nit") {
-            base = this.vriddhi(base);
-            steps.push(`✔ (7.2.115) अचो ञ्णिति → वृद्धि → ${base}`);
-        }
-        else {
-            base = this.guna(base);
-            steps.push(`✔ (3.1.68) सार्वधातुकयोः → गुण → ${base}`);
-        }
-
-        // =========================
-        // 2. कुत्व
-        // =========================
-        if (pData.kutva) {
-            if (base.endsWith('ज्')) {
-                base = base.replace(/ज्$/, 'ग्');
-                steps.push(`✔ (7.3.52) चजोः कु → ज् → ग्`);
-            }
-            if (base.endsWith('च्')) {
-                base = base.replace(/च्$/, 'क्');
-                steps.push(`✔ (7.3.52) चजोः कु → च् → क्`);
-            }
-        }
-
-        // =========================
-        // 3. टि-लोप
-        // =========================
-        if (pData.type === "dit") {
-            base = base.replace(/[क-ह]्?$/, '');
-            steps.push(`✔ (6.4.143) टेः → टि-लोप`);
-        }
-
-        // =========================
-        // 4. इट् आगम
-        // =========================
-        let isValadi = /^[क-ह]/.test(pratyaya);
-
-        if (dData.isSet && isValadi && pData.type !== "kit") {
-            base = this.sandhi(base, "इ");
-            steps.push(`✔ (7.2.35) आर्धधातुकस्येड् वलादेः → इट् आगम`);
-        }
-
-        // =========================
-        // 5. तुक् आगम
-        // =========================
-        if (pData.tuk && /[अइउऋ]$/.test(base)) {
-            pratyaya = "त्" + pratyaya;
-            steps.push(`✔ (6.1.73) ह्रस्वस्य पिति कृति तुक्`);
-        }
-
-        // =========================
-        // 6. SANDHI
-        // =========================
-        let result = this.sandhi(base, pratyaya);
-
-        // =========================
-        // 7. FINAL JOIN
-        // =========================
-        result = this.join(result);
-
-        steps.push(`🎯 Final Result: ${result}`);
-
-        return {
-            result,
-            steps
-        };
+    // २. गुण और वृद्धि नियम
+    guna: function(d) {
+        return d.replace(/ि|ी$/, 'े').replace(/ु|ू$/, 'ो').replace(/ृ$/, 'र्')
+                .replace(/ि(?=[क-ह]्$)/, 'े').replace(/ु(?=[क-ह]्$)/, 'ो').replace(/ृ(?=[क-ह]्$)/, 'र्');
+    },
+    vriddhi: function(d) {
+        return d.replace(/ि|ी$/, 'ै').replace(/ु|ू$/, 'ौ').replace(/ृ$/, 'ार्')
+                .replace(/अ(?=[क-ह]्$)/, 'आ');
     },
 
-    // ======================================
-    // SANDHI ENGINE
-    // ======================================
+    // ३. सन्धि इंजन (अन्वेध फिक्स यहाँ है)
     sandhi: function(w1, w2) {
-
         if (!w1 || !w2) return w1 + w2;
-
+        let last = w1.slice(-1);
+        let base = w1.slice(0, -1);
         let f = w2[0];
         let rest = w2.slice(1);
         let isVowel = this.vowels.includes(f);
 
-        // -------------------------
-        // अनुस्वार
-        // -------------------------
-        if ((w1.endsWith('म्') || w1.endsWith('ं')) && !isVowel) {
-            return w1.slice(0, -1) + 'ं' + f + rest;
-        }
-
-        // -------------------------
-        // अच् सन्धि
-        // -------------------------
-        let last = w1.slice(-1);
-        let base = w1.slice(0, -1);
-
-        if (this.vowels.includes(last) && isVowel) {
-
-            if (last === 'अ' && first === 'अ') return base + 'आ' + rest;
-            if (last === 'अ' && (f === 'इ' || f === 'ई')) return base + 'ए' + rest;
-            if (last === 'अ' && (f === 'उ' || f === 'ऊ')) return base + 'ओ' + rest;
-
-            if (last === 'अ' && (f === 'ए' || f === 'ऐ')) return base + 'ऐ' + rest;
-            if (last === 'अ' && (f === 'ओ' || f === 'औ')) return base + 'औ' + rest;
-        }
-
-        // -------------------------
-        // यण् (6.1.77)
-        // -------------------------
+        // यण् सन्धि (इको यणचि 6.1.77)
         if (isVowel) {
-            if (w1.endsWith('ि') || w1.endsWith('ी'))
-                return this.join(w1.slice(0,-1) + 'य्' + f + rest);
-
-            if (w1.endsWith('ु') || w1.endsWith('ू'))
-                return this.join(w1.slice(0,-1) + 'व्' + f + rest);
-
-            if (w1.endsWith('ृ'))
-                return this.join(w1.slice(0,-1) + 'र्' + f + rest);
+            if (last === 'ि' || last === 'ी') return base + 'य्' + f + rest;
+            if (last === 'ु' || last === 'ू') return base + 'व्' + f + rest;
+            if (last === 'ृ') return base + 'र्' + f + rest;
         }
 
-        // -------------------------
-        // व्यंजन सन्धि
-        // -------------------------
-        if (w1.endsWith('श्') && f === 'त')
-            return w1.slice(0, -2) + 'ष्ट' + rest;
+        // हलन्त + स्वर (पच् + अ = पच)
+        if (last === '्' && isVowel) return base + f + rest;
 
-        if (w1.endsWith('स्') && f === 'त')
-            return w1.slice(0, -2) + 'स्त' + rest;
-
-        if (w1.endsWith('न्') && f === 'क')
-            return w1.slice(0, -2) + 'ङ्क' + rest;
-
-        // -------------------------
-        // हलन्त + स्वर
-        // -------------------------
-        if (w1.endsWith('्') && isVowel)
-            return this.join(w1 + f + rest);
+        // व्यंजन सन्धि (कुत्व/श्चुत्व आदि का सरलीकरण)
+        if (w1.endsWith('च्') && f === 'त') return w1.slice(0, -2) + 'क्त' + rest;
+        if (w1.endsWith('ज्') && f === 'त') return w1.slice(0, -2) + 'क्त' + rest;
+        if (w1.endsWith('श्') && f === 'त') return w1.slice(0, -2) + 'ष्ट' + rest;
 
         return w1 + w2;
+    },
+
+    // ४. मुख्य प्रक्रिया (Derivation)
+    derive: function(dhatu, pratyaya, upasarga = "") {
+        let steps = [];
+        let dData = this.dhatuDB[dhatu] || { clean: dhatu, isSet: true };
+        let pData = this.kritDB[pratyaya] || { real: pratyaya, type: "anit" };
+
+        let base = dData.clean;
+        let realP = pData.real || pratyaya;
+
+        steps.push(`<b>१. आरम्भ:</b> ${upasarga ? upasarga + ' + ' : ''}${dhatu} + ${pratyaya}`);
+
+        // गुण/वृद्धि
+        if (pData.type === "kit") {
+            steps.push(`<b>२. निषेध:</b> 'क्ङिति च' (1.1.5) से गुण/वृद्धि का निषेध हुआ।`);
+        } else if (pData.type === "nit") {
+            base = this.vriddhi(base);
+            steps.push(`<b>२. वृद्धि:</b> 'अचो ञ्णिति' (7.2.115) से वृद्धि होकर '${base}' बना।`);
+        } else {
+            let old = base;
+            base = this.guna(base);
+            if (old !== base) steps.push(`<b>२. गुण:</b> 'सार्वधातुकार्धधातुकयोः' (7.3.84) से गुण होकर '${base}' बना।`);
+        }
+
+        // कुत्व
+        if (pData.kutva && (base.endsWith('ज्') || base.endsWith('च्'))) {
+            base = base.replace(/[ज्छ्]$/, 'क्');
+            steps.push(`<b>३. कुत्व:</b> 'चजोः कु' (7.3.52) से च्/ज् को क् हुआ -> ${base}`);
+        }
+
+        // इट् आगम
+        let isValadi = !this.vowels.includes(realP[0]) && realP[0] !== 'य्';
+        if (dData.isSet && isValadi) {
+            steps.push(`<b>४. इट्-आगम:</b> 'आर्धधातुकस्येड् वलादेः' (7.2.35) से 'इ' का आगम हुआ।`);
+            base = base + "इ";
+        }
+
+        // सन्धि और संयोजन
+        let combined = this.sandhi(base, realP);
+        
+        // उपसर्ग मेल
+        if (upasarga) {
+            let uBase = (upasarga === "अनु") ? "अनु" : upasarga;
+            combined = this.sandhi(uBase, combined);
+            steps.push(`<b>५. उपसर्ग योग:</b> '${uBase}' के साथ सन्धि हुई।`);
+        }
+
+        let final = this.join(combined);
+        steps.push(`<b>६. सिद्ध रूप:</b> ${final}`);
+
+        return { result: final, steps: steps };
     }
 };
