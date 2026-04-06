@@ -1,4 +1,132 @@
-let sanskritDatabase = {};
+// १. ग्लोबल डेटाबेस प्रारुप
+let sanskritDatabase = { upasargas: [], dhatus: {}, examples: [] };
+let pratyayaDB = {}; 
+
+// २. डेटा लोड करना और Merge करना
+async function loadDatabase() {
+    const timestamp = new Date().getTime();
+    const files = [
+        { key: 'dhatus', url: `dhatus.json?v=${timestamp}` },
+        { key: 'sutras', url: `sutras.json?v=${timestamp}` },
+        { key: 'examples', url: `examples.json?v=${timestamp}` },
+        { key: 'pratyayas', url: `pratyayas.json?v=${timestamp}` }
+    ];
+
+    for (const file of files) {
+        try {
+            const response = await fetch(file.url);
+            if (!response.ok) throw new Error(file.key + " missing");
+            const data = await response.json();
+            
+            if (file.key === 'dhatus') {
+                sanskritDatabase.dhatus = data.dhatus || {};
+                sanskritDatabase.upasargas = data.upasargas || [];
+                // इंजन के डेटाबेस के साथ सिंक करें
+                if(window.PaniniEngine) Object.assign(window.PaniniEngine.dhatuDB, data.dhatus);
+            } else if (file.key === 'pratyayas') {
+                pratyayaDB = data.pratyayaDB || {};
+                // इंजन के प्रत्यय डेटाबेस के साथ सिंक करें
+                if(window.PaniniEngine) Object.assign(window.PaniniEngine.kritDB, data.pratyayaDB);
+            } else if (file.key === 'examples') {
+                sanskritDatabase.examples = data.examples || [];
+            } else {
+                Object.assign(sanskritDatabase, data);
+            }
+        } catch (e) { console.warn("Load Warning:", e); }
+    }
+    initializeUI();
+}
+
+// ३. ड्रॉपडाउन और लिस्ट भरना
+function initializeUI() {
+    const upaList = document.getElementById("upaList");
+    const dList = document.getElementById("dhatuList");
+    const pList = document.getElementById("pratList");
+    const sutraDrop = document.getElementById("sutraDropdown");
+
+    if (upaList) upaList.innerHTML = sanskritDatabase.upasargas.map(u => `<option value="${u.id}">${u.label}</option>`).join("");
+    if (dList) dList.innerHTML = Object.keys(sanskritDatabase.dhatus).map(k => `<option value="${k}">${k}</option>`).join("");
+    if (pList) pList.innerHTML = Object.keys(pratyayaDB).map(k => `<option value="${k}">${k}</option>`).join("");
+    
+    if (sutraDrop) {
+        sutraDrop.innerHTML = "";
+        Object.keys(sanskritDatabase).forEach(key => {
+            if (Array.isArray(sanskritDatabase[key]) && (key.startsWith('pada') || key.includes('Sutras'))) {
+                sanskritDatabase[key].forEach(s => {
+                    sutraDrop.insertAdjacentHTML('beforeend', `
+                        <div class="sutra-item">
+                            <div class="sutra-header sanskrit-text" onclick="toggleAccordion(event, this)">
+                                [${s.id || 'स.'}] ${s.name} <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                            <div class="sutra-desc sanskrit-text">${s.desc}</div>
+                        </div>`);
+                });
+            }
+        });
+    }
+}
+
+// ४. मुख्य शब्द निर्माण (PaniniEngine का उपयोग)
+function generateKridanta() {
+    const upa = document.getElementById("upasarga").value.trim();
+    const dhatuStr = document.getElementById("dhatu").value.trim();
+    const rawPrat = document.getElementById("pratyaya").value.trim();
+
+    if(!dhatuStr || !rawPrat) return alert("कृपया धातु और प्रत्यय चुनें!");
+
+    if (!window.PaniniEngine) return alert("पाणिनि इंजन लोड नहीं हो सका!");
+
+    // इंजन से सिद्धि प्राप्त करें
+    const derivation = window.PaniniEngine.derive(dhatuStr, rawPrat, upa);
+
+    // रिज़ल्ट दिखाएँ
+    document.getElementById("finalOutput").innerText = derivation.result;
+
+    // विस्तृत व्याख्या (Steps) दिखाएँ
+    document.getElementById("prakriyaSteps").innerHTML = derivation.steps.map((s, i) => `
+        <li class="step-item">
+            <div style="background:#3b82f6; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:bold; font-size:14px;">${i+1}</div>
+            <div>${s}</div>
+        </li>`).join("");
+
+    document.getElementById("resultSection").classList.add("active");
+    // रिजल्ट आने पर स्टेप्स को खुला रखें या बंद, यहाँ से कंट्रोल करें
+    document.getElementById("prakriyaBox").classList.remove("show"); 
+}
+
+// ५. UI इंटरैक्शन और सर्च
+function togglePrakriya() { document.getElementById("prakriyaBox").classList.toggle("show"); }
+function toggleAccordion(e, el) { e.stopPropagation(); el.parentElement.classList.toggle("active"); }
+function toggleSutraDropdown(e) { e.stopPropagation(); document.getElementById("sutraDropdown").classList.toggle("show"); }
+
+function toggleDark() { 
+    document.body.classList.toggle("dark"); 
+    const icon = document.getElementById("theme-icon");
+    if(document.body.classList.contains("dark")) icon.classList.replace("fa-moon", "fa-sun");
+    else icon.classList.replace("fa-sun", "fa-moon");
+}
+
+function openSearchModal() { document.getElementById("searchModal").style.display = "block"; document.getElementById("searchInput").focus(); }
+function closeSearchModal() { document.getElementById("searchModal").style.display = "none"; }
+function toggleMobileMenu() { document.getElementById("nav-menu").classList.toggle("active"); }
+function closeMobileMenu() { document.getElementById("nav-menu").classList.remove("active"); }
+
+function performSearch() {
+    let q = document.getElementById("searchInput").value.trim();
+    let resDiv = document.getElementById("searchResults");
+    if (!q || !sanskritDatabase.examples) return resDiv.innerHTML = "";
+    let matched = sanskritDatabase.examples.filter(i => i.ex.includes(q) || (i.sutra && i.sutra.includes(q)));
+    resDiv.innerHTML = matched.map(m => `
+        <div class="result-card">
+            <div class="ex-text sanskrit-text">${m.ex}</div>
+            <div class="su-text"><b>सूत्र:</b> ${m.sutra}</div>
+        </div>`).join("");
+}
+
+// बाहरी क्लिक पर बंद करें
+window.onclick = (e) => { if (!e.target.closest('.nav-dropdown')) { const d = document.getElementById("sutraDropdown"); if(d) d.classList.remove("show"); } };
+
+window.onload = loadDatabase;let sanskritDatabase = {};
 let pratyayaDB = {}; 
 
 // ==================================================
